@@ -1,0 +1,36 @@
+@##EAR##@
+# ? tells the processor that the node will be rendered as python
+
+# args/parameters are on the RHS of :
+
+# nodes is on the left hand side of :
+
+# scope is within tabs of parent
+
+# variables are instantiated by using VAR_ then the variable name
+
+VAR_varname = value
+
+?INSERT:
+	PATH: path/path/headerbar.ear
+	SUBSTITUTIONS:
+		title: Earwig Documentation
+		buttons: Setup Requests Pre-Parser Contact
+
+?MIME: HTML
+
+?HEADERS:
+	Thing: value
+	otherThing: value
+	cors: *
+
+?REQUEST_LIMIT: 1000 PER 1h
+
+?PRESET: #this would load in a bunch of settings by default based on its parameter/preset\
+	API: #in this case the parameter is api which would set things like the mime type to json, limit requests to an arbitrary ammount, and 
+		MIME: WASM
+		REQUEST_LIMIT: 30 PER 1h #30 requests per hour
+
+IF %POST.headername == 10:
+	?REQUEST_LIMIT: 1000 PER 1h
+@##PY##@

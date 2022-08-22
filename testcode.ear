@@ -1,0 +1,38 @@
+?INSERT:
+	PATH: "/../testmodule.ear"
+	SUBSTITUTIONS:
+		title: "Earwig Documentation"
+		buttons: "setup"
+
+?MIME: HTML
+
+?HEADERS:
+	login: "earwig"
+	password: "root123"
+	cors:
+		Mode: "*"
+		other:
+			otherparameter: 500
+			otherparameter2: "600"
+		redirect: "google.com"
+	Title: "Home page"
+
+?REQUEST_LIMIT: 1000 PER 1:30
+
+?PRESET:
+	NEW_PRESET:
+		API:
+			MIME: JSON
+			REQUEST_LIMIT: 1000 PER 1:30
+		HTML:
+			MIME: HTML
+			HEADERS:
+				login: "earwig"
+				password: "root123"
+				cors:
+					Mode: "*"
+					other:
+						otherparameter: 500
+						otherparameter2: "600"
+					redirect: "google.com"
+				Title: "Home page"
