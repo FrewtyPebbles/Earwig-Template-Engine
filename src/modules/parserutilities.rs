@@ -86,7 +86,7 @@ pub fn parameter_determine(raw:String, force_string:bool) -> String {
 				{
 					header_dict += format!("\"{}\":[", header_tag.as_str()).as_str();
 					for curr_arg in header_value.borrow_mut().args.iter(){
-						header_dict += format!("{},", parse_type(curr_arg.clone()).as_str()).as_str();
+						header_dict += format!("{},", parse_type(*curr_arg.clone()).as_str()).as_str();
 					}
 					header_dict.pop();
 					header_dict += "],"

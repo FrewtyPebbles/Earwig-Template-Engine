@@ -1,7 +1,7 @@
 mod modules;
 
 use modules::datatypes::Node;
-
+use modules::settingshandler::parse_settings_arg;
 use modules::parser::parse_source;
 
 use std::collections::HashMap;
@@ -21,8 +21,8 @@ fn main() {
         value: String::from("SCOPE_GLOBAL"),
         render: false,
         tab_number: -1,
-        scope: HashMap::from([]),
-        args:  vec![]
+        scope: Box::new(HashMap::from([])),
+        args:  Box::new(vec![])
     };
 
     let settings_map = parse_settings_arg(cli_args[2].to_string());

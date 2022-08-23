@@ -13,7 +13,7 @@ pub fn parse_settings_arg(raw_settings:String) -> HashMap<String, String> {
                 is_key = false;
             },
             ',' => {
-                ret_val[key_buffer.clone()] = value_buffer.clone();
+                ret_val.insert(key_buffer.clone(), value_buffer.clone());
                 is_key = true;
             },
             _ => {

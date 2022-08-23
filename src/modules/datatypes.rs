@@ -1,5 +1,6 @@
 use crate::modules::parserutilities::{parse_type, node_to_json_preset};
 use crate::modules::parser::parse_source;
+use crate::modules::jsondeserializer::{ deserialize as json_deserialize};
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -9,6 +10,7 @@ use std::path::{PathBuf, Path};
 use std::io::{ BufReader, Write};
 use std::env;
 use std::fs::OpenOptions;
+use std::fs;
 
 #[derive(Clone)]
 pub struct Parameter {
@@ -16,13 +18,15 @@ pub struct Parameter {
 	pub var_type: String
 }
 
+//make parameters Rc value
+
 #[derive(Clone)]
 pub struct Node {
 	pub value: String,
 	pub render: bool,
 	pub tab_number: i32, // Optional incase of special scopes like Global
-	pub scope: HashMap<String, Rc<RefCell<Node>>>,
-	pub args: Vec<Parameter> // Optional incase of special scopes like Global
+	pub scope: Box<HashMap<String, Rc<RefCell<Node>>>>,
+	pub args: Box<Vec<Box<Parameter>>> // Optional incase of special scopes like Global
 }
 
 impl Node{
@@ -44,8 +48,8 @@ impl Node{
 						value: String::from("SCOPE_GLOBAL"),
 						render: false,
 						tab_number: -1,
-						scope: HashMap::from([]),
-						args:  vec![]
+						scope: Box::new(HashMap::from([])),
+						args:  Box::new(vec![])
 					};
 					let cli_args: Vec<String> = env::args().collect();
 					let path_string = self.scope["PATH"].borrow().args[0].value.clone();
@@ -88,7 +92,7 @@ impl Node{
 					{
 						if header_value.borrow_mut().scope.is_empty()
 						{
-							header_dict += format!(" \"{}\" : {},", header_tag.as_str(), parse_type(header_value.borrow_mut().args[0].clone()).as_str()).as_str();
+							header_dict += format!(" \"{}\" : {},", header_tag.as_str(), parse_type(*header_value.borrow_mut().args[0].clone()).as_str()).as_str();
 						}
 						else
 						{
@@ -102,12 +106,12 @@ impl Node{
 			},
 			"REQUEST_LIMIT" => {
 				if self.render {
-					println!("request_limit({}, {});", parse_type(self.args[0].clone()), parse_type(self.args[2].clone()));
+					println!("request_limit({}, {});", parse_type(*self.args[0].clone()), parse_type(*self.args[2].clone()));
 					std::io::stdout().flush().ok().expect("stdout failed to flush");
 				}
 			},
 			"PRESET" => {
-				if self.scope.contains_key("NEW_PRESET")//make new key function
+				if self.scope.contains_key("NEW_PRESETS")//make new key function
 				{
 					if !Path::new("earData.json").exists() {
 						File::create("earData.json").unwrap();
@@ -126,6 +130,8 @@ impl Node{
 						eprintln!("Couldn't write to file: {}", e);
 					}
 				}
+				let deserialized_json = json_deserialize(fs::read_to_string("earData.json").expect("Failed to read earData.json."));
+				println!("{}", deserialized_json.map["HTML"].borrow().map["HEADERS"].borrow().map["password"].borrow().array[0].borrow().value);
 			},
 			"IF" => {
 
@@ -153,11 +159,6 @@ impl Node{
 		{
 			println!(" {} - {} : \"{}\"", argument_index_debug, argument_debug.var_type, argument_debug.value);
 		}*/
-		let language_grammar_exec_first:&[&str] = &[
-		"IF",
-		"ELIF",
-		"ELSE",
-		];
 		let mut new_scope:HashMap<String, Rc<RefCell<Node>>> = HashMap::new();
 		if self.value == "SCOPE_GLOBAL"
 		{
@@ -199,7 +200,7 @@ impl Node{
 			}
 		}
 		self.scope.clear();
-		self.scope = new_scope;
+		self.scope = Box::new(new_scope);
 		if self.render {
 			self.call();
 		}

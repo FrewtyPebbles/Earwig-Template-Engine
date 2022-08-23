@@ -18,8 +18,8 @@ pub fn parse_source(src:BufReader<File>, node_global:Node) -> Rc<RefCell<Node>>{
             value: String::from(""),
             render: false,
             tab_number: 0,
-            scope: HashMap::from([]),
-            args: vec![]
+            scope: Box::new(HashMap::from([])),
+            args: Box::new(vec![])
         };
         let mut is_args:bool = false;
         let mut is_commenting:bool = false;
@@ -62,7 +62,7 @@ pub fn parse_source(src:BufReader<File>, node_global:Node) -> Rc<RefCell<Node>>{
 									value: syntax_buffer.clone(),
 									var_type: String::from(parameter_determine(syntax_buffer.clone(), force_string))
 								};
-								node_new.args.push(parameter_new);
+								node_new.args.push(Box::new(parameter_new));
 							}
 							syntax_buffer.clear();
 						},
@@ -101,7 +101,7 @@ pub fn parse_source(src:BufReader<File>, node_global:Node) -> Rc<RefCell<Node>>{
                     value: syntax_buffer.clone(),
                     var_type: String::from(parameter_determine(syntax_buffer.clone(), force_string))
                 };
-                node_new.args.push(parameter_new);
+                node_new.args.push(Box::new(parameter_new));
             }
             let last_ind = nodestack.len() - 1;
 			if nodestack[last_ind].borrow_mut().value == "SCOPE_GLOBAL"
