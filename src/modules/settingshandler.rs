@@ -2,7 +2,7 @@
 //usages
 use std::collections::HashMap;
 
-pub fn parse_settings_arg (raw_settings:String) -> HashMap<String, String> {
+pub fn parse_settings_arg(raw_settings:String) -> HashMap<String, String> {
     let mut ret_val:HashMap<String, String> = HashMap::new();
     let mut key_buffer:String = String::new();
     let mut value_buffer:String = String::new();

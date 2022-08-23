@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader};
 
-//This functional language acts as a preprocessor for earwig
+//This declarative language acts as a preprocessor for earwig
 //settings from settings.EWS will be sent via cli args[2]
 
 use std::env;
@@ -25,7 +25,7 @@ fn main() {
         args:  vec![]
     };
 
-    
+    let settings_map = parse_settings_arg(cli_args[2].to_string());
 
     let file = File::open(cli_args[1].to_string())
         .expect("Failed to open .ear file.");
