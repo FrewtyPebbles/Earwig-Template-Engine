@@ -1,6 +1,6 @@
 use crate::modules::parserutilities::{parse_type, node_to_json_preset};
 use crate::modules::parser::parse_source;
-use crate::modules::jsondeserializer::{ deserialize as json_deserialize};
+use crate::modules::jsondeserializer::{JsonNode, deserialize as json_deserialize};
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -12,7 +12,7 @@ use std::env;
 use std::fs::OpenOptions;
 use std::fs;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Parameter {
 	pub value: String,
 	pub var_type: String
@@ -20,7 +20,7 @@ pub struct Parameter {
 
 //make parameters Rc value
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Node {
 	pub value: String,
 	pub render: bool,
@@ -111,6 +111,18 @@ impl Node{
 				}
 			},
 			"PRESET" => {
+				fn build_nodes_from_json(json_node:&JsonNode, scope:Box<HashMap<String, Rc<RefCell<Node>>>> ) -> Node {
+					fn build_nodes(node:Node, json_node:&JsonNode) {
+						
+					}
+					let mut ret_node = Node::default();
+					//this will loop through all specified presets under the preset function
+					//and recursively build and render them from the json
+					for (key, value) scope.iter() {
+						
+					}
+					ret_node
+				}
 				if self.scope.contains_key("NEW_PRESETS")//make new key function
 				{
 					if !Path::new("earData.json").exists() {
