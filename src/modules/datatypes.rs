@@ -59,7 +59,7 @@ impl Node{
 						if path_part == ".."{
 							let parent_path = generate_path.parent();
 							if parent_path == None {
-								generate_path = PathBuf::from("/").parent().unwrap().to_path_buf();
+								generate_path = PathBuf::from("./").parent().unwrap().to_path_buf();
 							}
 							else
 							{

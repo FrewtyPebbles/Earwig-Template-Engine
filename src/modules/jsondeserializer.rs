@@ -26,7 +26,7 @@ pub fn deserialize(raw_json:String) -> JsonNode {
 	let mut char_buff = String::new();
 	let mut last_char = 'z';
 	let mut is_quoting = Box::new(false);
-	let mut has_value = Box::new(false);
+	let mut is_primitive = Box::new(true);
 	//node stack
 	let mut node_stack:Vec<Rc<RefCell<JsonNode>>> = Vec::new();
 	node_stack.push(Rc::new(RefCell::new(global_node)));
@@ -39,132 +39,97 @@ pub fn deserialize(raw_json:String) -> JsonNode {
 		if !*is_quoting {
 			match raw_char {
 				'{' => {
-					println!("VAL: {}", node_stack[node_stack.len() - 1].borrow_mut().value.clone());
-					morph_node.structure = Box::new(StructureType::Map);
-					let node_cpy = Rc::new(RefCell::new(morph_node.clone()));
-					if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Map) {
-						node_stack[node_stack.len() - 1].borrow_mut().map.insert(*node_cpy.borrow().value.clone(), Rc::clone(&node_cpy));
+					*morph_node.structure = StructureType::Map;
+					if *node_stack[node_stack.len() - 1].borrow().value == "GLOBAL_JSON_NODE"
+					{
+						let tmp_node = Rc::new(RefCell::new(morph_node.clone()));
+						node_stack[node_stack.len() - 1].borrow_mut().map.insert(*morph_node.value.clone(), Rc::clone(&tmp_node));
+						node_stack.push(Rc::clone(&tmp_node));
 					}
-					else if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Array) {
-						node_stack[node_stack.len() - 1].borrow_mut().array.push(Rc::clone(&node_cpy));
+					else
+					{
+						insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
 					}
-					else {
-						node_stack[node_stack.len() - 1].borrow_mut().single = vec![Rc::clone(&node_cpy)];
-					}
-					node_stack.push(Rc::clone(&node_cpy));
-					//clr the morph node
-					*morph_node.structure = StructureType::Single;
-					*morph_node.value = String::new();
-					*morph_node.array = Vec::new();
-					*morph_node.map = HashMap::new();
+					morph_node = JsonNode::default();
 				},
 				'}' => {
-					let mut temp_node = JsonNode::default();
-					*temp_node.value = char_buff.clone();
-					morph_node.single = vec![Rc::new(RefCell::new(temp_node))];
-					if *has_value {
-						morph_node.structure = Box::new(StructureType::Single);
-						let node_cpy = Rc::new(RefCell::new(morph_node.clone()));
-						if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Map) {
-							node_stack[node_stack.len() - 1].borrow_mut().map.insert(*node_cpy.borrow().value.clone(), Rc::clone(&node_cpy));
-						}
-						else if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Array) {
-							node_stack[node_stack.len() - 1].borrow_mut().array.push(Rc::clone(&node_cpy));
-						}
-						else {
-							node_stack[node_stack.len() - 1].borrow_mut().single = vec![Rc::clone(&node_cpy)];
-						}
-						node_stack.push(Rc::clone(&node_cpy));
-						//clr the morph node
+					if *is_primitive {
+						*morph_node.value = char_buff.clone();
 						*morph_node.structure = StructureType::Single;
-						*morph_node.value = String::new();
-						*morph_node.array = Vec::new();
-						*morph_node.map = HashMap::new();
+						insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
+						*is_primitive = false;
+						node_stack.pop();
 					}
-					println!("{} : {}", morph_node.value.clone(), char_buff.clone());
+					else
+					{
+						insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
+						node_stack.pop();
+					}
 					node_stack.pop();
-					*has_value = false;
+					morph_node = JsonNode::default();
+					char_buff = String::new();
 				},
 				'[' => {
-					morph_node.structure = Box::new(StructureType::Array);
-					let node_cpy = Rc::new(RefCell::new(morph_node.clone()));
-					if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Map) {
-						node_stack[node_stack.len() - 1].borrow_mut().map.insert(*node_cpy.borrow().value.clone(), Rc::clone(&node_cpy));
+					*morph_node.structure = StructureType::Array;
+					if *node_stack[node_stack.len() - 1].borrow().value == "GLOBAL_JSON_NODE"
+					{
+						let tmp_node = Rc::new(RefCell::new(morph_node.clone()));
+						node_stack[node_stack.len() - 1].borrow_mut().map.insert(*morph_node.value.clone(), Rc::clone(&tmp_node));
+						node_stack.push(Rc::clone(&tmp_node));
 					}
-					else if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Array){
-						node_stack[node_stack.len() - 1].borrow_mut().array.push(Rc::clone(&node_cpy));
+					else
+					{
+						insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
 					}
-					else {
-						node_stack[node_stack.len() - 1].borrow_mut().single = vec![Rc::clone(&node_cpy)];
-					}
-					node_stack.push(Rc::clone(&node_cpy));
-					//clr the morph node
-					*morph_node.structure = StructureType::Single;
-					*morph_node.value = String::new();
-					*morph_node.array = Vec::new();
-					*morph_node.map = HashMap::new();
+					morph_node = JsonNode::default();
+					*is_primitive = true;
 				},
 				']' => {
-					let mut temp_node = JsonNode::default();
-					*temp_node.value = char_buff.clone();
-					morph_node.single = vec![Rc::new(RefCell::new(temp_node.clone()))];
-					if *has_value {
-						morph_node.structure = Box::new(StructureType::Single);
-						let node_cpy = Rc::new(RefCell::new(morph_node.clone()));
-						if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Map) {
-							node_stack[node_stack.len() - 1].borrow_mut().map.insert(*node_cpy.borrow().value.clone(), Rc::clone(&node_cpy));
-						}
-						else if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Array) {
-							node_stack[node_stack.len() - 1].borrow_mut().array.push(Rc::clone(&node_cpy));
-						}
-						else {
-							node_stack[node_stack.len() - 1].borrow_mut().single = vec![Rc::clone(&node_cpy)];
-						}
-						node_stack.push(Rc::clone(&node_cpy));
-						//clr the morph node
+					if *is_primitive {
+						*morph_node.value = char_buff.clone();
 						*morph_node.structure = StructureType::Single;
-						*morph_node.value = String::new();
-						*morph_node.array = Vec::new();
-						*morph_node.map = HashMap::new();
+						insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
+						*is_primitive = false;
+						node_stack.pop();
 					}
-					println!("{} : {}", morph_node.value.clone(), char_buff.clone());
+					else
+					{
+						insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
+						node_stack.pop();
+					}
 					node_stack.pop();
-					*has_value = false;
+					morph_node = JsonNode::default();
+					char_buff = String::new();
+					*is_primitive = true;
 				},
 				'"' => {
 
 				},
 				',' => {
-					let mut temp_node = JsonNode::default();
-					*temp_node.value = char_buff.clone();
-					morph_node.single = vec![Rc::new(RefCell::new(temp_node.clone()))];
-					if *has_value {
-						morph_node.structure = Box::new(StructureType::Single);
-						let node_cpy = Rc::new(RefCell::new(morph_node.clone()));
-						if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Map) {
-							node_stack[node_stack.len() - 1].borrow_mut().map.insert(*node_cpy.borrow().value.clone(), Rc::clone(&node_cpy));
+					if last_char != ']' && last_char != '}'
+					{
+						if *is_primitive {
+							*morph_node.value = char_buff.clone();
+							*morph_node.structure = StructureType::Single;
+							insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
+							*is_primitive = false;
+							node_stack.pop();
 						}
-						else if node_stack[node_stack.len() - 1].borrow_mut().structure == Box::new(StructureType::Array) {
-							node_stack[node_stack.len() - 1].borrow_mut().array.push(Rc::clone(&node_cpy));
+						else
+						{
+							insert_into_parent(&Rc::new(RefCell::new(morph_node.clone())), &mut node_stack);
+							node_stack.pop();
 						}
-						else {
-							node_stack[node_stack.len() - 1].borrow_mut().single = vec![Rc::clone(&node_cpy)];
-						}
-						node_stack.push(Rc::clone(&node_cpy));
-						//clr the morph node
-						*morph_node.structure = StructureType::Single;
-						*morph_node.value = String::new();
-						*morph_node.array = Vec::new();
-						*morph_node.map = HashMap::new();
+						morph_node = JsonNode::default();
+						char_buff = String::new();
+						*is_primitive = true;
 					}
-					char_buff = String::from("");
-					*has_value = false;
 				},
 				':' => {
 					*morph_node.value = char_buff.clone();
-					println!("VALUE: {}", char_buff.clone());
-					char_buff = String::from("");
-					*has_value = true;
+					*morph_node.structure = StructureType::Single;
+					*is_primitive = false;
+					char_buff = String::new();
 				},
 				_ => {
 					char_buff.push(raw_char.clone());
@@ -176,13 +141,32 @@ pub fn deserialize(raw_json:String) -> JsonNode {
 		}
 		last_char = raw_char.clone();
 	}
-	dbg_print_map(&node_stack[0].borrow().map);
 	let ret_value = node_stack[0].borrow().map[""].borrow().clone();
 	ret_value
 }
 
+fn insert_into_parent(child:&Rc<RefCell<JsonNode>>, node_stack:&mut Vec<Rc<RefCell<JsonNode>>>) {
+	if *node_stack[node_stack.len() - 1].borrow().structure == StructureType::Array {
+		node_stack[node_stack.len() - 1].borrow_mut().array.push(Rc::clone(child));
+		node_stack.push(Rc::clone(child));
+	}
+	else if *node_stack[node_stack.len() - 1].borrow().structure == StructureType::Map {
+		node_stack[node_stack.len() - 1].borrow_mut().map.insert(*child.borrow().value.clone(), Rc::clone(child));
+		node_stack.push(Rc::clone(child));
+	}
+	else {//single
+		node_stack[node_stack.len() - 1].borrow_mut().single = vec![Rc::clone(child)];
+	}
+}
+
 fn dbg_print_map(map: &Box<HashMap<String, Rc<RefCell<JsonNode>>>>) {
     for (key, value) in map.iter() {
+        println!("{} / {}", key, value.borrow().value);
+    }
+}
+
+fn dbg_print_array(vector: &Box<Vec<Rc<RefCell<JsonNode>>>>) {
+    for (key, value) in vector.iter().enumerate() {
         println!("{} / {}", key, value.borrow().value);
     }
 }
