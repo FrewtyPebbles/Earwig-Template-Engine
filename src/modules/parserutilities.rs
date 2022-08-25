@@ -4,14 +4,14 @@ pub fn parameter_determine(raw:String, force_string:bool) -> String {
 		let mut ret_val;
 	
 	
-		if force_string {
+		if force_string || raw.chars().last().is_none() {
 			ret_val = String::from("str");
 		}
 		else {
-			if raw.contains(":"){
+			if raw.contains(":") && !raw.starts_with("!#!"){
 				ret_val = String::from("time");
 			}
-			else if raw.chars().last().unwrap().is_numeric(){
+			else if raw.chars().last().unwrap().is_numeric() && !raw.starts_with("!#!"){
 				ret_val = String::from("number");
 				for raw_char in raw.chars() {
 					if !raw_char.is_numeric() && raw_char != '-' && raw_char != '.' {
@@ -79,17 +79,19 @@ pub fn parameter_determine(raw:String, force_string:bool) -> String {
 		fn recursive_json(header:Node) -> String {
 			let mut header_dict = String::new();
 			header_dict += "{";
-			header_dict += format!("\"!#!nodeparam:tab_number\":{},", header.tab_number.clone()).as_str();
+			header_dict += format!("\"!#!RENDER\":{},", header.render.clone()).as_str();
 			for (header_tag, header_value) in header.scope.iter()
 			{
 				if header_value.borrow_mut().scope.is_empty()
 				{
-					header_dict += format!("\"{}\":[", header_tag.as_str()).as_str();
+					header_dict += format!("\"{}\":{{", header_tag.as_str()).as_str();
+					header_dict += format!("\"!#!RENDER\":{},", header_value.borrow_mut().render.clone()).as_str();
+					header_dict += format!("\"!#!ARGUMENTS\":[").as_str();
 					for curr_arg in header_value.borrow_mut().args.iter(){
 						header_dict += format!("{},", parse_type(*curr_arg.clone()).as_str()).as_str();
 					}
 					header_dict.pop();
-					header_dict += "],"
+					header_dict += "]},";
 				}
 				else
 				{

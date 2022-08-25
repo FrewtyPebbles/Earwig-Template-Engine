@@ -31,5 +31,5 @@ fn main() {
         .expect("Failed to open .ear file.");
 
     let origin_reader = BufReader::new(file);
-    parse_source(origin_reader, node_global).borrow_mut().interpret();
+    parse_source(origin_reader, node_global).borrow_mut().interpret(false);
 }

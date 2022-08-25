@@ -1,6 +1,6 @@
-use crate::modules::parserutilities::{parse_type, node_to_json_preset};
+use crate::modules::parserutilities::{parse_type, node_to_json_preset, parameter_determine};
 use crate::modules::parser::parse_source;
-use crate::modules::jsondeserializer::{JsonNode, deserialize as json_deserialize};
+use crate::modules::jsondeserializer::{deserialize as json_deserialize};
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -24,13 +24,13 @@ pub struct Parameter {
 pub struct Node {
 	pub value: String,
 	pub render: bool,
-	pub tab_number: i32, // Optional incase of special scopes like Global
+	pub tab_number: i32,
 	pub scope: Box<HashMap<String, Rc<RefCell<Node>>>>,
-	pub args: Box<Vec<Box<Parameter>>> // Optional incase of special scopes like Global
+	pub args: Box<Vec<Box<Parameter>>>
 }
 
 impl Node{
-	pub fn call(&self) -> Node
+	pub fn call(&self, is_preset:bool) -> Node
 	{
 		let ret_val:Node = Node {
 			value: String::from(self.value.as_str()),
@@ -41,9 +41,10 @@ impl Node{
 		};
 		//println!("Parsing : {}", self.value);
 		let matchkey = self.value.as_str();
+		println!("PARSING TREE {}", self.value.clone());
 		match matchkey {
 			"INSERT" => {
-				if self.render {
+				if self.render && !is_preset {
 					let node_global = Node {
 						value: String::from("SCOPE_GLOBAL"),
 						render: false,
@@ -74,11 +75,11 @@ impl Node{
 					let file = File::open(generate_path.clone().into_os_string().into_string().unwrap())
 						.expect("Failed to open .ear file.");
 					let origin_reader = BufReader::new(file);
-					parse_source(origin_reader, node_global).borrow_mut().interpret();
+					parse_source(origin_reader, node_global).borrow_mut().interpret(is_preset);
 				}
 			},
 			"MIME" => {
-				if self.render {
+				if self.render && !is_preset {
 					println!("mime_type(\"{}\");", self.args[0].value);
 					std::io::stdout().flush().ok().expect("stdout failed to flush");
 				}
@@ -105,24 +106,12 @@ impl Node{
 				println!("set_headers({});", recursive_header(self.clone()).as_str());
 			},
 			"REQUEST_LIMIT" => {
-				if self.render {
+				if self.render && !is_preset {
 					println!("request_limit({}, {});", parse_type(*self.args[0].clone()), parse_type(*self.args[2].clone()));
 					std::io::stdout().flush().ok().expect("stdout failed to flush");
 				}
 			},
 			"PRESET" => {
-				fn build_nodes_from_json(json_node:&JsonNode, scope:Box<HashMap<String, Rc<RefCell<Node>>>> ) -> Node {
-					fn build_nodes(node:Node, json_node:&JsonNode) {
-						
-					}
-					let mut ret_node = Node::default();
-					//this will loop through all specified presets under the preset function
-					//and recursively build and render them from the json
-					for (key, value) scope.iter() {
-						
-					}
-					ret_node
-				}
 				if self.scope.contains_key("NEW_PRESETS")//make new key function
 				{
 					if !Path::new("earData.json").exists() {
@@ -134,7 +123,7 @@ impl Node{
 					.open("earData.json")
 					.unwrap();
 					let mut json_objects:String = String::new();
-					for (_,curr_preset) in self.scope["NEW_PRESET"].borrow().scope.clone().iter(){
+					for (_,curr_preset) in self.scope["NEW_PRESETS"].borrow().scope.clone().iter(){
 						json_objects += node_to_json_preset(curr_preset.borrow().clone(), curr_preset.borrow().value.clone()).as_str();
 					}
 					json_objects.pop();
@@ -142,8 +131,14 @@ impl Node{
 						eprintln!("Couldn't write to file: {}", e);
 					}
 				}
-				let deserialized_json = json_deserialize(fs::read_to_string("earData.json").expect("Failed to read earData.json."));
-				println!("{}", deserialized_json.map["HTML"].borrow().map["HEADERS"].borrow().map["password"].borrow().array[0].borrow().value);
+				if !self.scope.contains_key("NEW_PRESETS")
+				{
+					println!("DESERIALIZING");
+					let json_nodes = json_deserialize(fs::read_to_string("earData.json").expect("Failed to read earData.json."));
+					for (k, _) in self.scope.iter() {
+						json_nodes.scope[k].borrow_mut().interpret(false);
+					}
+				}
 			},
 			"IF" => {
 
@@ -159,7 +154,7 @@ impl Node{
 		}
 		ret_val
 	}
-	pub fn interpret(&mut self) -> Node {
+	pub fn interpret(&mut self, mut is_preset:bool) -> Node {
 		/*print!("\nValue: \"{}\"\n - Tabs: {}\n", self.value, self.tab_number);
 		println!(" - Scope:");
 		for (scope_index_debug, scope_debug) in self.scope.iter()
@@ -177,13 +172,13 @@ impl Node{
 			for current_ind in 0..self.scope.keys().len() {
 				if self.scope[&current_ind.to_string()].borrow().scope.is_empty()
 				{
-					new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(self.scope[&current_ind.to_string()].borrow().call())));
+					new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(self.scope[&current_ind.to_string()].borrow().call(is_preset))));
 				}
 				else
 				{
-					let temp_node = self.scope[&current_ind.to_string()].borrow_mut().interpret();
+					let temp_node = self.scope[&current_ind.to_string()].borrow_mut().interpret(is_preset.clone());
 					if self.render {
-						new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(temp_node.call())));
+						new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(temp_node.call(is_preset.clone()))));
 					}
 					else
 					{
@@ -194,27 +189,37 @@ impl Node{
 		}
 		else {
 			for (_, current) in self.scope.iter() {
-				if current.borrow().scope.is_empty()
-				{
-					new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(current.borrow().call())));
-				}
-				else
-				{
-					let temp_node = current.borrow_mut().interpret();
-					if self.render {
-						new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(temp_node.call())));
+				if current.borrow().value != "" {
+					if current.borrow().value == "NEW_PRESETS"
+					{
+						is_preset = true;
+					}
+					if current.borrow().scope.is_empty()
+					{
+						new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(current.borrow().call(is_preset.clone()))));
 					}
 					else
 					{
-						new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(temp_node)));
+						let temp_node = current.borrow_mut().interpret(is_preset.clone());
+						if self.render {
+							new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(temp_node.call(is_preset.clone()))));
+						}
+						else
+						{
+							new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(temp_node)));
+						}
+					}
+					if current.borrow().value == "NEW_PRESETS"
+					{
+						is_preset = false;
 					}
 				}
 			}
 		}
 		self.scope.clear();
 		self.scope = Box::new(new_scope);
-		if self.render {
-			self.call();
+		if self.render && !is_preset && self.value != ""{
+			self.call(false);
 		}
 		self.clone()
 	}
