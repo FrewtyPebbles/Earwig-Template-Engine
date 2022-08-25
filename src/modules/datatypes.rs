@@ -41,7 +41,7 @@ impl Node{
 		};
 		//println!("Parsing : {}", self.value);
 		let matchkey = self.value.as_str();
-		println!("PARSING TREE {}", self.value.clone());
+		//println!("PARSING TREE {}", self.value.clone());
 		match matchkey {
 			"INSERT" => {
 				if self.render && !is_preset {
@@ -71,7 +71,7 @@ impl Node{
 							generate_path = generate_path.to_path_buf().join(path_part);
 						}
 					}
-					println!("PATH {}", generate_path.clone().into_os_string().into_string().unwrap());
+					//println!("PATH {}", generate_path.clone().into_os_string().into_string().unwrap());
 					let file = File::open(generate_path.clone().into_os_string().into_string().unwrap())
 						.expect("Failed to open .ear file.");
 					let origin_reader = BufReader::new(file);
@@ -91,7 +91,7 @@ impl Node{
 					header_dict += "{";
 					for (header_tag, header_value) in header.scope.iter()
 					{
-						if header_value.borrow_mut().scope.is_empty()
+						if header_value.borrow().scope.clone().is_empty() && header_value.borrow().args.len() > 0
 						{
 							header_dict += format!(" \"{}\" : {},", header_tag.as_str(), parse_type(*header_value.borrow_mut().args[0].clone()).as_str()).as_str();
 						}
@@ -128,12 +128,12 @@ impl Node{
 					}
 					json_objects.pop();
 					if let Err(e) = write!(file, "{{{}}}", json_objects) {
-						eprintln!("Couldn't write to file: {}", e);
+						println!("Couldn't write to file: {}", e);
 					}
 				}
 				if !self.scope.contains_key("NEW_PRESETS")
 				{
-					println!("DESERIALIZING");
+					//println!("DESERIALIZING");
 					let json_nodes = json_deserialize(fs::read_to_string("earData.json").expect("Failed to read earData.json."));
 					for (k, _) in self.scope.iter() {
 						json_nodes.scope[k].borrow_mut().interpret(false);

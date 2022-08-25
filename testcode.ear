@@ -1,8 +1,8 @@
-#?INSERT:
-#	PATH: "/../testmodule.ear"
-#	SUBSTITUTIONS:
-#		title: "Earwig Documentation"
-#		buttons: "setup"
+?INSERT:
+	PATH: "/../testmodule.ear"
+	SUBSTITUTIONS:
+		title: "Earwig Documentation"
+		buttons: "setup"
 
 ?MIME: HTML
 
@@ -34,4 +34,4 @@
 				Title: "Home page"
 
 ?PRESET:
-	HTML: true
+	API: true
