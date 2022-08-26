@@ -93,7 +93,7 @@ impl Node{
 						tmp_str = re.replace_all(tmp_str.as_str(), parse_type(*val.borrow().args[0].clone()).as_str()).to_string();
 					}
 					_exec_str = tmp_str;
-					parse_source(_exec_str, node_global).borrow_mut().interpret(false);
+					parse_source(format!("{}\n$",_exec_str), node_global).borrow_mut().interpret(false);
 				}
 			},
 			"MIME" => {
