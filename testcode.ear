@@ -1,42 +1,42 @@
 Test
 $
-		?INSERT:
-			PATH: "/../testmodule.ear"
-			SUBSTITUTIONS:
-				req_lim: 2000
-				mime: HTML
+?INSERT:
+	PATH: "/../testmodule.ear"
+	SUBSTITUTIONS:
+		req_lim: 2000
+		mime: HTML
 
-		?MIME: HTML
+?MIME: HTML
 
-		?HEADERS:
-			login: "earwig"
-			password: "root123"
-			cors:
-				Mode: "*"
-			Title: "Home page"
+?HEADERS:
+	login: "earwig"
+	password: "root123"
+	cors:
+		Mode: "*"
+	Title: "Home page"
 
-		?REQUEST_LIMIT: 1000 PER 1:30
+?REQUEST_LIMIT: 1000 PER 1:30
 
-		?PRESET:
-			NEW_PRESETS:
-				API:
-					?MIME: JSON
-					?REQUEST_LIMIT: 1000 PER 1:30
-				HTML:
-					?MIME: HTML
-					?HEADERS:
-						login: "earwig"
-						password: "root123"
-						cors:
-							Mode: "*"
-							other:
-								otherparameter: 500
-								otherparameter2: "600"
-							redirect: "google.com"
-						Title: "Home page"
+?PRESET:
+	NEW_PRESETS:
+		API:
+			?MIME: JSON
+			?REQUEST_LIMIT: 1000 PER 1:30
+		HTML:
+			?MIME: HTML
+			?HEADERS:
+				login: "earwig"
+				password: "root123"
+				cors:
+					Mode: "*"
+					other:
+						otherparameter: 500
+						otherparameter2: "600"
+					redirect: "google.com"
+				Title: "Home page"
 
-		?PRESET:
-			API: true
+?PRESET:
+	API: true
 $
 test
 $

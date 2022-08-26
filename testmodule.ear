@@ -1,11 +1,11 @@
 wwwaaaaa
 $
-			?MIME: {mime:JSON}
+?MIME: {mime:JSON}
 
-			?REQUEST_LIMIT: {req_lim:1000} PER 1:20:30
+?REQUEST_LIMIT: {req_lim:1000} PER 1:20:30
 
-			?PRESET:
-				HTML: true
+?PRESET:
+	HTML: true
 
 $
 
