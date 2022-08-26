@@ -66,7 +66,7 @@ pub fn parameter_determine(raw:String, force_string:bool) -> String {
 				ret_val = param.value.clone();
 			},
 			"keyword" => {
-				ret_val = format!("\"!#!KEYWORD:{}\"",param.value.clone());
+				ret_val = format!("\"{}\"",param.value.clone());
 			},
 			_ => {
 	

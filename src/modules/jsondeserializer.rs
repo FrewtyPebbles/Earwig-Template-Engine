@@ -32,7 +32,7 @@ pub fn deserialize(raw_json:String) -> Node {
 	let mut is_primitive = Box::new(true);
 	//node stack
 	let mut node_stack:Vec<(Rc<RefCell<Node>>, StructureType, String)> = Vec::new();
-	let mut global_ptr = Rc::new(RefCell::new(global_node.0));
+	let global_ptr = Rc::new(RefCell::new(global_node.0));
 	node_stack.push((Rc::clone(&global_ptr), global_node.1, String::new()));
 	let mut morph_node = (Node::default(), StructureType::Single, String::new());
 	morph_node.0.value = String::from("");
@@ -181,8 +181,8 @@ pub fn deserialize(raw_json:String) -> Node {
 		}
 		last_char = raw_char.clone();
 	}
-	dbg_print_map(&global_ptr.borrow().scope[""].borrow().scope["HTML"].borrow().scope.clone());
-	dbg_print_array(global_ptr.borrow().scope[""].borrow().scope["HTML"].borrow().scope["MIME"].borrow().args.clone());
+	//dbg_print_map(&global_ptr.borrow().scope[""].borrow().scope["HTML"].borrow().scope.clone());
+	//dbg_print_array(global_ptr.borrow().scope[""].borrow().scope["HTML"].borrow().scope["MIME"].borrow().args.clone());
 	let ret_value = &global_ptr.borrow().scope[""].borrow().clone();
 	ret_value.clone()
 }
@@ -199,12 +199,12 @@ fn insert_into_parent(child:(&Rc<RefCell<Node>>, StructureType, String), node_st
 			}
 			else {
 				//println!("ARG VAL {}", child.0.borrow().value.clone());
-				let mut start_val = child.0.borrow().value.clone();
-				let split_val:Vec<&str>;
+				let start_val = child.0.borrow().value.clone();
+				/*let split_val:Vec<&str>;
 				if child.0.borrow().value.starts_with("!#!") {
 					split_val = start_val.split(":").collect();
 					start_val = String::from(split_val[1]);
-				}
+				}*/
 				node_stack[node_stack.len() - 2].0.borrow_mut().args.push(Box::new(Parameter {
 					value: start_val,
 					var_type: parameter_determine(child.0.borrow().value.clone(), false),
@@ -233,14 +233,14 @@ fn insert_into_parent(child:(&Rc<RefCell<Node>>, StructureType, String), node_st
 	}
 }
 
-fn dbg_print_map(map: &Box<HashMap<String, Rc<RefCell<Node>>>>) {
+fn _dbg_print_map(map: &Box<HashMap<String, Rc<RefCell<Node>>>>) {
     for (key, value) in map.iter() {
-        //println!("{} / {} ({})", key, value.borrow().value, value.borrow().render);
+        println!("{} / {} ({})", key, value.borrow().value, value.borrow().render);
     }
 }
 
-fn dbg_print_array(vector: Box<Vec<Box<Parameter>>>) {
+fn _dbg_print_array(vector: Box<Vec<Box<Parameter>>>) {
     for (key, value) in vector.iter().enumerate() {
-        //println!("{} / {}", key, value.value);
+        println!("{} / {}", key, value.value);
     }
 }

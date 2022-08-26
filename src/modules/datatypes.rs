@@ -1,4 +1,4 @@
-use crate::modules::parserutilities::{parse_type, node_to_json_preset, parameter_determine};
+use crate::modules::parserutilities::{parse_type, node_to_json_preset};
 use crate::modules::parser::parse_source;
 use crate::modules::jsondeserializer::{deserialize as json_deserialize};
 
@@ -7,10 +7,11 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::{PathBuf, Path};
-use std::io::{ BufReader, Write};
+use std::io::{self, BufReader, Write, Read};
 use std::env;
 use std::fs::OpenOptions;
 use std::fs;
+use regex::Regex;
 
 #[derive(Clone, Default)]
 pub struct Parameter {
@@ -39,10 +40,16 @@ impl Node{
 			scope: self.scope.clone(),
 			args: self.args.clone()
 		};
-		//println!("Parsing : {}", self.value);
+		//println!("Parsing : {}", self.value.clone());
 		let matchkey = self.value.as_str();
 		//println!("PARSING TREE {}", self.value.clone());
 		match matchkey {
+			"TEXT_GLOBAL" => {
+				if self.render && !is_preset {
+					print!("{}", self.args[0].value);
+					std::io::stdout().flush().ok().expect("stdout failed to flush");
+				}
+			},
 			"INSERT" => {
 				if self.render && !is_preset {
 					let node_global = Node {
@@ -74,13 +81,24 @@ impl Node{
 					//println!("PATH {}", generate_path.clone().into_os_string().into_string().unwrap());
 					let file = File::open(generate_path.clone().into_os_string().into_string().unwrap())
 						.expect("Failed to open .ear file.");
-					let origin_reader = BufReader::new(file);
-					parse_source(origin_reader, node_global).borrow_mut().interpret(is_preset);
+					let mut origin_reader:BufReader<File> = BufReader::new(file);
+					let mut tmp_str = String::new();
+					let mut _exec_str = String::new();
+					origin_reader.read_to_string(&mut tmp_str)
+					.expect("Insert failed to read .ear file to string.");
+					let mut re:Regex;// this regex is used to find the substitution, later implement a faster O(n) approach
+					for (key, val) in self.scope["SUBSTITUTIONS"].borrow().scope.iter() {
+						re = Regex::new(&format!(r"(?m)(\{{{}:).+(\}})", key).as_str()).unwrap();
+						tmp_str = tmp_str.replace(format!("{{{}}}", key).as_str(), parse_type(*val.borrow().args[0].clone()).as_str());
+						tmp_str = re.replace_all(tmp_str.as_str(), parse_type(*val.borrow().args[0].clone()).as_str()).to_string();
+					}
+					_exec_str = tmp_str;
+					parse_source(_exec_str, node_global).borrow_mut().interpret(false);
 				}
 			},
 			"MIME" => {
 				if self.render && !is_preset {
-					println!("mime_type(\"{}\");", self.args[0].value);
+					print!("mime_type(\"{}\");", self.args[0].value);
 					std::io::stdout().flush().ok().expect("stdout failed to flush");
 				}
 			},
@@ -103,11 +121,12 @@ impl Node{
 					header_dict += " }";
 					header_dict
 				}
-				println!("set_headers({});", recursive_header(self.clone()).as_str());
+				print!("set_headers({});", recursive_header(self.clone()).as_str());
+				io::stdout().flush().expect("Couldn't flush stdout");
 			},
 			"REQUEST_LIMIT" => {
 				if self.render && !is_preset {
-					println!("request_limit({}, {});", parse_type(*self.args[0].clone()), parse_type(*self.args[2].clone()));
+					print!("request_limit({}, {});", parse_type(*self.args[0].clone()), parse_type(*self.args[2].clone()));
 					std::io::stdout().flush().ok().expect("stdout failed to flush");
 				}
 			},
@@ -128,7 +147,8 @@ impl Node{
 					}
 					json_objects.pop();
 					if let Err(e) = write!(file, "{{{}}}", json_objects) {
-						println!("Couldn't write to file: {}", e);
+						print!("Couldn't write to file: {}", e);
+						io::stdout().flush().expect("Couldn't flush stdout");
 					}
 				}
 				if !self.scope.contains_key("NEW_PRESETS")
@@ -148,24 +168,14 @@ impl Node{
 			},
 			_ => {
 				if self.render {
-					println!(" < ! ERR ! > \"{}\" IS NOT A RENDERABLE KEY.", matchkey)
+					print!(" < ! ERR ! > \"{}\" IS NOT A RENDERABLE KEY.", matchkey);
+					io::stdout().flush().expect("Couldn't flush stdout");
 				}
 			}
 		}
 		ret_val
 	}
 	pub fn interpret(&mut self, mut is_preset:bool) -> Node {
-		/*print!("\nValue: \"{}\"\n - Tabs: {}\n", self.value, self.tab_number);
-		println!(" - Scope:");
-		for (scope_index_debug, scope_debug) in self.scope.iter()
-		{
-			println!(" {} - {}", scope_index_debug, scope_debug.borrow().value);
-		}
-		println!(" - Arg:");
-		for (argument_index_debug, argument_debug) in self.args.iter().enumerate()
-		{
-			println!(" {} - {} : \"{}\"", argument_index_debug, argument_debug.var_type, argument_debug.value);
-		}*/
 		let mut new_scope:HashMap<String, Rc<RefCell<Node>>> = HashMap::new();
 		if self.value == "SCOPE_GLOBAL"
 		{

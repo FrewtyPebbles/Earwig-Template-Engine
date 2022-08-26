@@ -1,3 +1,5 @@
+extern crate regex;
+
 mod modules;
 
 use modules::datatypes::Node;
@@ -6,7 +8,7 @@ use modules::parser::parse_source;
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader};
+use std::io::{BufReader, Read};
 
 //This declarative language acts as a preprocessor for earwig
 //settings from settings.EWS will be sent via cli args[2]
@@ -25,11 +27,13 @@ fn main() {
         args:  Box::new(vec![])
     };
 
-    let settings_map = parse_settings_arg(cli_args[2].to_string());
+    let _settings_map = parse_settings_arg(cli_args[2].to_string());
 
     let file = File::open(cli_args[1].to_string())
         .expect("Failed to open .ear file.");
 
-    let origin_reader = BufReader::new(file);
-    parse_source(origin_reader, node_global).borrow_mut().interpret(false);
+    let mut origin_reader = BufReader::new(file);
+    let mut exec_str = String::new();
+    origin_reader.read_to_string(&mut exec_str).expect("Insert failed to read .ear file to string.");
+    parse_source(exec_str, node_global).borrow_mut().interpret(false);
 }
