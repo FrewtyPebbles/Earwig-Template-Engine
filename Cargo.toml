@@ -12,3 +12,4 @@ path = "src/main.rs"
 
 [dependencies]
 regex = "0.2"
+colored = "2"

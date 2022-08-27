@@ -1,4 +1,5 @@
 use std::process;
+use colored::{Colorize, ColoredString};
 
 pub enum InvalidTemplate {
 	Lowercase,
@@ -78,7 +79,20 @@ pub fn handle_error(err_desc:((ErrorDescription, ErrorReason), Vec<&str>), err_s
 		ErrorType::Syntax => "Syntax",
 		ErrorType::Fatal => "FATAL",
 	};
-	eprintln!("\n┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╍┅┈┈\n▼ ERROR ( {} ) : {} | {} !\n● ━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━╍┅┈┈\n│ ⟲ {}\n│------------------------------------\n││ {} ┆ ▻  {}{}\n┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╍┅┈┈", kind_of_error, err_line, err_column, err_file, err_line, description, suggestion);
+	if err_desc.1[0] != "" {
+		eprintln!("{}",format!(
+			"\n┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╍┅┈┈\n▼ {} ( {} ) : {} | {} !\n● ━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━⚋━╍┅┈┈\n│ {}\n│------------------------------------\n││ {} ┆ {}  {}{}\n┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╍┅┈┈",
+			format!("ERROR").bright_yellow(),
+			kind_of_error.green(),
+			err_line.yellow(), err_column.yellow(),
+			format!("⟲ {}", err_file).cyan(),
+			err_line.yellow(),
+			"▻".red(),
+			description.red(),
+			suggestion.cyan()
+			).bright_black()
+		);
+	}
 	match err_type {
 		ErrorType::Fatal => {
 			process::exit(1);
