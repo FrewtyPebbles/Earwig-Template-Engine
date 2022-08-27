@@ -18,7 +18,7 @@ pub fn parse_source(src:String, node_global:Node, file_path:String) -> Rc<RefCel
 	let mut last_char:char = '\n';
     for (linenum, line) in src.lines().enumerate() {
         let line_val = format!("{}\n", line);
-        if !line_val.chars().all(char::is_whitespace)
+        if if is_template {!line_val.chars().all(char::is_whitespace)} else {true}
         {
 			let mut node_new = Node {
 				value: String::from(""),
@@ -64,7 +64,22 @@ pub fn parse_source(src:String, node_global:Node, file_path:String) -> Rc<RefCel
 									is_substituting = false;
 								},
 								'\n' => {
-									
+									if last_char != '$' && !is_args {
+										handle_error(
+											(
+												(
+													ErrorDescription::MissingCharacter,
+													ErrorReason::None
+												),
+												vec![":", syntax_buffer.clone().as_str()]
+											),
+											"All templates must be closed with a ':' character.",
+											ErrorType::Syntax,
+											format!("{}",linenum.clone() + 1).as_str(),
+											format!("{}",colnum.clone()).as_str(),
+											file_path.clone().as_str()
+										);
+									}
 								},
 								'$' => {
 									if last_char == '\n' {

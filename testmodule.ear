@@ -4,9 +4,6 @@ $
 
 ?REQUEST_LIMIT: {req_lim:1000} PER 1:20:30
 
-?PRESET:
-	HTML: true
-
 $
 
 This is a test
