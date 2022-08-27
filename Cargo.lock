@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "earwig_template_engine"
-version = "0.3.0"
+version = "0.4.1"
 dependencies = [
  "regex",
 ]

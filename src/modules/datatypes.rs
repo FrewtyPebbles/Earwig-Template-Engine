@@ -1,6 +1,8 @@
 use crate::modules::parserutilities::{parse_type, node_to_json_preset};
 use crate::modules::parser::parse_source;
 use crate::modules::jsondeserializer::{deserialize as json_deserialize};
+//Error handler
+use crate::modules::errorhandler::{handle_error, ErrorReason, ErrorDescription, ErrorType, InvalidTemplate};
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -31,7 +33,7 @@ pub struct Node {
 }
 
 impl Node{
-	pub fn call(&self, is_preset:bool) -> Node
+	pub fn call(&self, is_preset:bool, file_path:String) -> Node
 	{
 		let ret_val:Node = Node {
 			value: String::from(self.value.as_str()),
@@ -93,7 +95,7 @@ impl Node{
 						tmp_str = re.replace_all(tmp_str.as_str(), parse_type(*val.borrow().args[0].clone()).as_str()).to_string();
 					}
 					_exec_str = tmp_str;
-					parse_source(format!("{}\n$",_exec_str), node_global).borrow_mut().interpret(false);
+					parse_source(format!("{}\n$",_exec_str), node_global, format!("{} ~> {}", file_path.clone(), generate_path.clone().into_os_string().into_string().unwrap())).borrow_mut().interpret(false, format!("{} ~> {}", file_path.clone(), generate_path.clone().into_os_string().into_string().unwrap()));
 				}
 			},
 			"MIME" => {
@@ -133,30 +135,66 @@ impl Node{
 			"PRESET" => {
 				if self.scope.contains_key("NEW_PRESETS")//make new key function
 				{
-					if !Path::new("earData.json").exists() {
-						File::create("earData.json").unwrap();
-					}
-					let mut file = OpenOptions::new()
-					.write(true)
-					.truncate(true)
-					.open("earData.json")
-					.unwrap();
 					let mut json_objects:String = String::new();
 					for (_,curr_preset) in self.scope["NEW_PRESETS"].borrow().scope.clone().iter(){
 						json_objects += node_to_json_preset(curr_preset.borrow().clone(), curr_preset.borrow().value.clone()).as_str();
 					}
 					json_objects.pop();
-					if let Err(e) = write!(file, "{{{}}}", json_objects) {
-						print!("Couldn't write to file: {}", e);
-						io::stdout().flush().expect("Couldn't flush stdout");
-					}
+					//println!("JSON OBJS {}", json_objects);
+					let mut file = match File::create(Path::new("earData.json")) {
+						Err(why) => panic!("{}", why),
+						Ok(file) => file,
+					};
+					match file.write_all(format!("{{{}}}", json_objects).as_bytes()) {
+						Err(why) => panic!("{}", why),
+						Ok(_) => ""
+					};
 				}
 				if !self.scope.contains_key("NEW_PRESETS")
 				{
 					//println!("DESERIALIZING");
-					let json_nodes = json_deserialize(fs::read_to_string("earData.json").expect("Failed to read earData.json."));
-					for (k, _) in self.scope.iter() {
-						json_nodes.scope[k].borrow_mut().interpret(false);
+					let json_nodes = json_deserialize(match fs::read_to_string("earData.json"){
+						Err(_) => {
+							"{}".to_string()
+						},
+						Ok(ret_str) => {
+							if ret_str == "" {
+								handle_error(
+									(
+										(
+											ErrorDescription::InvalidTemplate,
+											ErrorReason::InvalidTemplate(InvalidTemplate::NoPresets)
+										),
+										vec![self.value.as_str()]
+									),
+									"",
+									ErrorType::Fatal,
+									"?",
+									format!("{}",self.tab_number.clone()).as_str(),
+									file_path.clone().as_str()
+								);
+							}
+							ret_str
+						}
+					});
+					for (k, v) in self.scope.iter() {
+						if !json_nodes.scope.contains_key(k) {
+							handle_error(
+								(
+									(
+										ErrorDescription::InvalidTemplate,
+										ErrorReason::InvalidTemplate(InvalidTemplate::PresetDoesntExist)
+									),
+									vec![k]
+								),
+								"",
+								ErrorType::Fatal,
+								"?",
+								format!("{}",v.borrow().tab_number.clone()).as_str(),
+								file_path.clone().as_str()
+							);
+						}
+						json_nodes.scope[k].borrow_mut().interpret(false, format!("{} -> PRESETS", file_path.clone()));
 					}
 				}
 			},
@@ -168,27 +206,39 @@ impl Node{
 			},
 			_ => {
 				if self.render {
-					print!(" < ! ERR ! > \"{}\" IS NOT A RENDERABLE KEY.", matchkey);
-					io::stdout().flush().expect("Couldn't flush stdout");
+					handle_error(
+						(
+							(
+								ErrorDescription::InvalidTemplate,
+								ErrorReason::InvalidTemplate(InvalidTemplate::NotRenderable)
+							),
+							vec![self.value.as_str()]
+						),
+						"",
+						ErrorType::Grammar,
+						"?",
+						format!("{}",self.tab_number.clone()).as_str(),
+						file_path.clone().as_str()
+					);
 				}
 			}
 		}
 		ret_val
 	}
-	pub fn interpret(&mut self, mut is_preset:bool) -> Node {
+	pub fn interpret(&mut self, mut is_preset:bool, file_path:String) -> Node {
 		let mut new_scope:HashMap<String, Rc<RefCell<Node>>> = HashMap::new();
 		if self.value == "SCOPE_GLOBAL"
 		{
 			for current_ind in 0..self.scope.keys().len() {
 				if self.scope[&current_ind.to_string()].borrow().scope.is_empty()
 				{
-					new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(self.scope[&current_ind.to_string()].borrow().call(is_preset))));
+					new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(self.scope[&current_ind.to_string()].borrow().call(is_preset, file_path.clone()))));
 				}
 				else
 				{
-					let temp_node = self.scope[&current_ind.to_string()].borrow_mut().interpret(is_preset.clone());
+					let temp_node = self.scope[&current_ind.to_string()].borrow_mut().interpret(is_preset.clone(), file_path.clone());
 					if self.render {
-						new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(temp_node.call(is_preset.clone()))));
+						new_scope.insert(self.scope[&current_ind.to_string()].borrow().value.clone(), Rc::new(RefCell::new(temp_node.call(is_preset.clone(), file_path.clone()))));
 					}
 					else
 					{
@@ -206,13 +256,13 @@ impl Node{
 					}
 					if current.borrow().scope.is_empty()
 					{
-						new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(current.borrow().call(is_preset.clone()))));
+						new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(current.borrow().call(is_preset.clone(), file_path.clone()))));
 					}
 					else
 					{
-						let temp_node = current.borrow_mut().interpret(is_preset.clone());
+						let temp_node = current.borrow_mut().interpret(is_preset.clone(), file_path.clone());
 						if self.render {
-							new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(temp_node.call(is_preset.clone()))));
+							new_scope.insert(current.borrow().value.clone(), Rc::new(RefCell::new(temp_node.call(is_preset.clone(), file_path.clone()))));
 						}
 						else
 						{
@@ -229,7 +279,7 @@ impl Node{
 		self.scope.clear();
 		self.scope = Box::new(new_scope);
 		if self.render && !is_preset && self.value != ""{
-			self.call(false);
+			self.call(false, file_path.clone());
 		}
 		self.clone()
 	}

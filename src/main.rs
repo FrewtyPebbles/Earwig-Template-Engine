@@ -38,5 +38,5 @@ fn main() {
         Ok(v) => v,
         Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
     };*/
-    parse_source(format!("{}\n$",file), node_global).borrow_mut().interpret(false);
+    parse_source(format!("{}\n$",file), node_global, cli_args[1].to_string().clone()).borrow_mut().interpret(false, cli_args[1].to_string().clone());
 }
