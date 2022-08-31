@@ -10,21 +10,62 @@ __Templates are keywords in the template engine that are built into the engine. 
 
  - **Generates earwig python to set the response Headers.**
 
+```
+?HEADERS:
+	Username: "name"
+	Password: "password123"
+	Data:
+		subData: "123"
+		otherSubData: "456"
+```
+
 ## ?MIME
 
  - **Generates earwig python to set the response MIME type.**
+
+```
+?MIME: JSON
+```
 
 ## ?PRESET
 
  - **Used to create or render presets.**
 
+```
+?PRESET:
+	API:
+```
+
 ### NEW_PRESETS
 
  - **Sub-template used to declare new presets.**
 
+```
+?PRESET:
+	NEW_PRESETS:
+		API:
+			?HEADERS:
+				Cors: "*"
+				Auth:
+					Token: "*&^87^*&^8^$%643$%3%"
+					ID: 1
+			?MIME: JSON
+		HTML:
+			?MIME: HTML
+			?INSERT:
+				PATH: "../PAGES/navbar.ear"
+				SUBSTITUTIONS:
+					#Home is set to true because it is the active tab in the navbar.
+					Home: "True"
+```
+
 ## ?REQUEST_LIMIT
 
  - **Generates the earwig python to set the request limit.**
+
+```
+?REQUEST_LIMIT: 100 PER 1:30:30 
+```
 
 ## ?INSERT
 
@@ -37,6 +78,14 @@ __Templates are keywords in the template engine that are built into the engine. 
 ### SUBSTITUTIONS
 
  - **Sub-template used to declare substitutions to swap out.**
+
+```
+?INSERT:
+	PATH: "../PAGES/navbar.ear"
+	SUBSTITUTIONS:
+		#Home is set to true because it is the active tab in the navbar.
+		Home: "True"
+```
 
 # Not implemented yet
 
