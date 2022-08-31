@@ -2,22 +2,64 @@
 
 **The python preprocessor for the Earwig web framework.**
 
-## Keywords
+# Keywords
 
-### ?HEADERS
+## ?HEADERS
 
-### ?MIME
+**Generates earwig python to set the response Headers.**
 
-### ?PRESET
+## ?MIME
 
-`NEW_PRESETS`
+**Generates earwig python to set the response MIME type.**
 
-### ?REQUEST_LIMIT
+## ?PRESET
 
-### ?INSERT
+**Used to create or render presets.**
 
-`PATH`
+### NEW_PRESETS
 
-`SUBSTITUTIONS`
+**Sub-template used to declare new presets.**
 
-## SUBSTITUTIONS
+## ?REQUEST_LIMIT
+
+**Generates the earwig python to set the request limit.**
+
+## ?INSERT
+
+**Used to insert other .ear or .py files into the position at the template.**
+
+### PATH
+
+**Sub-template used to declare the path to the file to insert.**
+
+### SUBSTITUTIONS
+
+**Sub-template used to declare substitutions to swap out.**
+
+# Not implemented yet
+
+## ?REQUEST
+
+ - Different file types will be handled differently
+
+```
+?REQUEST:
+	URL: https://api.com/authhandler.py
+	BODY:
+		USERNAME: "root"
+		PASSWORD: "password"
+```
+
+**.py files will concatenate the file into the .ear file, much like an INSERT or PRESET**
+
+```
+?REQUEST:
+	URL: https://api.com/page.ear
+	SUBSTITUTIONS:
+		name: "username"
+	BODY:
+		USERNAME: "root"
+		PASSWORD: "password"
+```
+
+**.ear files will allow for the same substitutions that INSERT allows for**
