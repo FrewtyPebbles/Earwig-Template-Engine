@@ -2,11 +2,13 @@
 
 **The python preprocessor for the Earwig web framework.**
 
+__NOTE__ : This pre-processor is expieremental and is no way reccomended or required in order to use the earwig web framework.  This was more of an expierement I made to see what I could use a pre-processor for in my web framework.
+
 # Templates
 
-__Templates are keywords in the template engine that are built into the engine.  If a template has the `?` symbol behind it, then it is renderable/executeable__
+__Templates are keywords in the template engine that are built into the engine.  If a template has the `?` symbol behind it, then it is renderable/executeable.  Templates with a star infront of them render to python and should only be used at an indentation level of 0 (Best practices are probably to avoid using these templates in general).__
 
-## ?HEADERS
+## ?HEADERS *
 
  - **Generates earwig python to set the response Headers.**
 
@@ -19,7 +21,7 @@ __Templates are keywords in the template engine that are built into the engine. 
 		otherSubData: "456"
 ```
 
-## ?MIME
+## ?MIME *
 
  - **Generates earwig python to set the response MIME type.**
 
@@ -57,14 +59,6 @@ __Templates are keywords in the template engine that are built into the engine. 
 				SUBSTITUTIONS:
 					#Home is set to true because it is the active tab in the navbar.
 					Home: "True"
-```
-
-## ?REQUEST_LIMIT
-
- - **Generates the earwig python to set the request limit.**
-
-```
-?REQUEST_LIMIT: 100 PER 1:30:30 
 ```
 
 ## ?INSERT
