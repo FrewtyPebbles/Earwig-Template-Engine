@@ -180,7 +180,7 @@ pub fn parse_source(src:String, node_global:Node, file_path:String) -> Rc<RefCel
 				}
 				else
 				{
-					if !is_template && origin_char == '$' && last_char == '\n'{
+					if !is_template && origin_char == '$' && (last_char == '\n' || last_char == '\t'){
 						
 		
 						let text_global = Node {

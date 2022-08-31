@@ -49,9 +49,9 @@ impl Node{
 			"TEXT_GLOBAL" => {
 				if self.render && !is_preset {
 					let mut text = self.args[0].value.clone();
-					if text.ends_with('\n'){
-						text.pop();
-					}
+					//if text.ends_with('\n'){
+					//	text.pop();
+					//}
 					print!("{}", text);
 					std::io::stdout().flush().ok().expect("stdout failed to flush");
 				}

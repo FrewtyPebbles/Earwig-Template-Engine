@@ -1,4 +1,6 @@
-$
+
+if True:
+	$
 ?INSERT:
 	PATH: "/../testmodule.ear"
 	SUBSTITUTIONS:
@@ -6,7 +8,7 @@ $
 		mime: HTML
 
 ?MIME: HTML
-abc d
+
 ?HEADERS:
 	login: "earwig"
 	password: "root123"
@@ -33,7 +35,6 @@ abc d
 						otherparameter2: "600"
 					redirect: "google.com"
 				Title: "Home page"
-?API:
 ?PRESET:
 	API:
 $
