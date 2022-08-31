@@ -2,7 +2,7 @@
 
 **The python preprocessor for the Earwig web framework.**
 
-__NOTE__ : This pre-processor is expieremental and is no way reccomended or required in order to use the earwig web framework.  This was more of an expierement I made to see what I could use a pre-processor for in my web framework.
+__NOTE__ : This pre-processor is experimental and is no way reccomended or required in order to use the earwig web framework.  This was more of an expierement I made to see what I could use a pre-processor for in my web framework.
 
 # Templates
 
